@@ -1,0 +1,298 @@
+#include <iostream>
+#include <vector>
+using namespace std;
+class LibraryOperations {
+public:
+    virtual void issueBook() = 0;
+    virtual void returnBook() = 0;
+};
+
+class Book {
+private:
+    int bookId;
+    string bookName;
+    string authorName;
+    bool available;
+
+public:
+    Book(int id, string name, string author) {
+        bookId = id;
+        bookName = name;
+        authorName = author;
+        available = true;
+    }
+
+    int getBookId() {
+        return bookId;
+    }
+
+    string getBookName() {
+        return bookName;
+    }
+
+    bool isAvailable() {
+        return available;
+    }
+
+    void setAvailability(bool status) {
+        available = status;
+    }
+
+    void displayBook() {
+        cout << "\nBook ID: " << bookId;
+        cout << "\nBook Name: " << bookName;
+        cout << "\nAuthor: " << authorName;
+        cout << "\nStatus: " << (available ? "Available" : "Issued") << endl;
+    }
+};
+
+class Person {
+protected:
+    int id;
+    string name;
+
+public:
+    Person(int i, string n) {
+        id = i;
+        name = n;
+    }
+
+    virtual void displayDetails() {
+        cout << "\nID: " << id;
+        cout << "\nName: " << name;
+    }
+};
+
+class Student : public Person {
+private:
+    string department;
+    vector<int> borrowedBooks;
+
+public:
+    Student(int i, string n, string dept) : Person(i, n) {
+        department = dept;
+    }
+
+    bool borrowBook(int bookId) {
+        if (borrowedBooks.size() >= 3) {
+            cout << "\nBorrow limit exceeded!";
+            return false;
+        }
+
+        borrowedBooks.push_back(bookId);
+        return true;
+    }
+
+    bool returnBook(int bookId) {
+        for (int i = 0; i < borrowedBooks.size(); i++) {
+            if (borrowedBooks[i] == bookId) {
+                borrowedBooks.erase(borrowedBooks.begin() + i);
+                return true;
+            }
+        }
+
+        cout << "\nThis book was not borrowed by student!";
+        return false;
+    }
+
+    void displayDetails() override {
+        cout << "\nStudent ID: " << id;
+        cout << "\nStudent Name: " << name;
+        cout << "\nDepartment: " << department;
+        cout << "\nBorrowed Books: ";
+
+        if (borrowedBooks.empty()) {
+            cout << "None";
+        } else {
+            for (int b : borrowedBooks)
+                cout << b << " ";
+        }
+        cout << endl;
+    }
+};
+
+class Librarian : public Person {
+public:
+    Librarian(int i, string n) : Person(i, n) {}
+
+    void displayDetails() override {
+        cout << "\nLibrarian ID: " << id;
+        cout << "\nLibrarian Name: " << name << endl;
+    }
+};
+
+class Library : public LibraryOperations {
+private:
+    vector<Book> books;
+    vector<Student> students;
+
+public:
+    void addBook(Book b) {
+        books.push_back(b);
+        cout << "\nBook Added Successfully!";
+    }
+
+    void addStudent(Student s) {
+        students.push_back(s);
+        cout << "\nStudent Added Successfully!";
+    }
+
+    void viewBooks() {
+        if (books.empty()) {
+            cout << "\nNo books available!";
+            return;
+        }
+
+        for (auto &b : books)
+            b.displayBook();
+    }
+
+    void viewStudents() {
+        for (auto &s : students)
+            s.displayDetails();
+    }
+
+    void issueBook() override {
+        int sid, bid;
+
+        cout << "\nEnter Student ID: ";
+        cin >> sid;
+
+        cout << "Enter Book ID: ";
+        cin >> bid;
+
+        for (auto &b : books) {
+            if (b.getBookId() == bid) {
+
+                if (!b.isAvailable()) {
+                    cout << "\nBook already issued!";
+                    return;
+                }
+
+                for (auto &s : students) {
+                    if (s.borrowBook(bid) && sid == sid) {
+                        b.setAvailability(false);
+                        cout << "\nBook Issued Successfully!";
+                        return;
+                    }
+                }
+            }
+        }
+
+        cout << "\nBook or Student not found!";
+    }
+
+    void returnBook() override {
+        int bid;
+
+        cout << "\nEnter Book ID to Return: ";
+        cin >> bid;
+
+        for (auto &b : books) {
+            if (b.getBookId() == bid) {
+
+                for (auto &s : students) {
+                    if (s.returnBook(bid)) {
+                        b.setAvailability(true);
+                        cout << "\nBook Returned Successfully!";
+                        return;
+                    }
+                }
+            }
+        }
+
+        cout << "\nBook not found!";
+    }
+};
+
+int main() {
+
+    Library lib;
+
+    int choice;
+
+    do {
+        cout << "\n\n===== LIBRARY MANAGEMENT SYSTEM =====";
+        cout << "\n1. Add Book";
+        cout << "\n2. View Books";
+        cout << "\n3. Add Student";
+        cout << "\n4. Issue Book";
+        cout << "\n5. Return Book";
+        cout << "\n6. View Students";
+        cout << "\n7. Exit";
+
+        cout << "\nEnter Choice: ";
+        cin >> choice;
+
+        switch (choice) {
+
+        case 1: {
+            int id;
+            string name, author;
+
+            cout << "\nEnter Book ID: ";
+            cin >> id;
+
+            cin.ignore();
+
+            cout << "Enter Book Name: ";
+            getline(cin, name);
+
+            cout << "Enter Author Name: ";
+            getline(cin, author);
+
+            Book b(id, name, author);
+            lib.addBook(b);
+
+            break;
+        }
+
+        case 2:
+            lib.viewBooks();
+            break;
+
+        case 3: {
+            int id;
+            string name, dept;
+
+            cout << "\nEnter Student ID: ";
+            cin >> id;
+
+            cin.ignore();
+
+            cout << "Enter Student Name: ";
+            getline(cin, name);
+
+            cout << "Enter Department: ";
+            getline(cin, dept);
+
+            Student s(id, name, dept);
+            lib.addStudent(s);
+
+            break;
+        }
+
+        case 4:
+            lib.issueBook();
+            break;
+
+        case 5:
+            lib.returnBook();
+            break;
+
+        case 6:
+            lib.viewStudents();
+            break;
+
+        case 7:
+            cout << "\nThank You!";
+            break;
+
+        default:
+            cout << "\nInvalid Choice!";
+        }
+
+    } while (choice != 7);
+
+    return 0;
+}
